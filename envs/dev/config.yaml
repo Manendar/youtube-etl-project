@@ -1,0 +1,34 @@
+
+
+# HDFS Configuration
+hdfs_namenode_url: "http://namenode:9870"
+hdfs_base_path: "/hdfs/dev/youtube_data"
+
+# HDFS Zones (subdirectories within base_path)
+raw_zone: "raw_zone"                    # Where raw CSV/JSON files are uploaded
+staging_zone: "staging_zone"            # Where cleaned data is stored
+processed_zone: "processed_zone"        # Where final analytics results are stored
+
+# Database Configuration
+database_uri: "postgresql://dev_user:dev_pass@postgres/dev_db"
+airflow_db: "airflow_dev"
+
+# Airflow Settings
+airflow_secret_key: "dev-secret-key-12345"
+airflow_port: 8082
+
+# Logging Configuration
+log_level: "DEBUG"                      # DEBUG shows all details - good for development
+
+# Monitoring (disabled in dev)
+enable_monitoring: false
+enable_alerts: false
+
+# Spark Configuration (smaller resources for dev)
+spark_executor_memory: "2g"             # Memory per executor
+spark_driver_memory: "1g"               # Driver memory
+spark_executor_cores: 2                 # CPU cores per executor
+
+# Environment Identifier
+environment: "dev"
+environment_name: "Development"

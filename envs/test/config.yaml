@@ -1,0 +1,36 @@
+# Test Environment Configuration
+# Used by QA team to validate features before going to production
+# This environment mirrors production as closely as possible
+
+# HDFS Configuration
+hdfs_namenode_url: "http://namenode:9870"
+hdfs_base_path: "/hdfs/test/youtube_data"
+
+# HDFS Zones (subdirectories within base_path)
+raw_zone: "raw_zone"
+staging_zone: "staging_zone"
+processed_zone: "processed_zone"
+
+# Database Configuration
+database_uri: "postgresql://test_user:test_pass@postgres/test_db"
+airflow_db: "airflow_test"
+
+# Airflow Settings
+airflow_secret_key: "test-secret-key-67890"
+airflow_port: 8083
+
+# Logging Configuration
+log_level: "INFO"                       # INFO shows important events, not everything like DEBUG
+
+# Monitoring (enabled in test to catch issues before prod)
+enable_monitoring: true
+enable_alerts: false                    # No alerts yet, just monitoring
+
+# Spark Configuration (more resources than dev, mirrors prod)
+spark_executor_memory: "4g"
+spark_driver_memory: "2g"
+spark_executor_cores: 4
+
+# Environment Identifier
+environment: "test"
+environment_name: "Testing"

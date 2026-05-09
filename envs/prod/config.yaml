@@ -1,0 +1,36 @@
+# Production Environment Configuration
+# Used for live data processing
+# This is the real environment - be careful with changes here!
+
+# HDFS Configuration
+hdfs_namenode_url: "http://namenode:9870"
+hdfs_base_path: "/hdfs/prod/youtube_data"
+
+# HDFS Zones (subdirectories within base_path)
+raw_zone: "raw_zone"
+staging_zone: "staging_zone"
+processed_zone: "processed_zone"
+
+# Database Configuration
+database_uri: "postgresql://prod_user:prod_pass@postgres/prod_db"
+airflow_db: "airflow_prod"
+
+# Airflow Settings
+airflow_secret_key: "prod-secret-key-change-before-deploying"
+airflow_port: 8084
+
+# Logging Configuration
+log_level: "WARNING"                    # WARNING only logs errors and warnings, not normal events
+
+# Monitoring (fully enabled in prod)
+enable_monitoring: true
+enable_alerts: true                     # Alerts ON - notify team if something breaks
+
+# Spark Configuration (full resources for prod)
+spark_executor_memory: "8g"
+spark_driver_memory: "4g"
+spark_executor_cores: 8
+
+# Environment Identifier
+environment: "prod"
+environment_name: "Production"

@@ -1,0 +1,61 @@
+# Environment variables and secrets
+.env
+.env.*
+*.env
+
+# Kaggle credentials
+kaggle.json
+.kaggle/
+
+
+# Raw data files
+data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+
+# Compiled Python files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environments
+venv/
+env/
+.venv/
+envs/*/lib/
+envs/*/bin/
+envs/*/include/
+
+
+# Docker volumes (local data)
+hadoop_master_volume/
+hadoop_slave_volumes/
+postgres_data/
+
+*.log
+logs/
+airflow/logs/
+
+
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
