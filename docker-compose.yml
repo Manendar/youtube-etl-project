@@ -55,7 +55,8 @@ services:
         environment:
             - HADOOP_USER_NAME=hadoop
             - KAGGLE_USERNAME=${KAGGLE_USERNAME} 
-            - KAGGLE_KEY=${KAGGLE_KEY}  
+            - KAGGLE_KEY=${KAGGLE_KEY}
+            - ENVIRONMENT=${ENVIRONMENT}
         networks:
             - hadoop_project
         healthcheck:
@@ -155,11 +156,25 @@ services:
             - hadoop_project
         restart: on-failure
 
+    jenkins:
+        image: jenkins/jenkins:lts
+        container_name: jenkins_server
+        ports:
+            - 8080:8080
+            - 50000:50000
+        volumes:
+            - jenkins_home:/var/jenkins_home
+            - /var/run/docker.sock:/var/run/docker.sock
+        networks:
+            - hadoop_project
+        restart: on-failure
+
 volumes:
     hadoop_master_volume:
     hadoop_slave_volumes:
     youtube-etl-project:
     postgres_data:
+    jenkins_home:
 
 networks:
     hadoop_project:
