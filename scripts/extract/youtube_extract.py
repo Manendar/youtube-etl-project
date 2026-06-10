@@ -27,7 +27,13 @@ except Exception as e:
 
 def download_from_kaggle():
     """Download dataset from Kaggle to local temp folder"""
+    # remove any existing files
+    if os.path.exists(local_temp):
+        shutil.rmtree(local_temp)
+        print(f"Cleaned up old {local_temp}", flush=True)
+
     print("Authenticating with Kaggle...", flush=True)
+
     kaggle.api.authenticate()
     print("Authentication successful!", flush=True)
 

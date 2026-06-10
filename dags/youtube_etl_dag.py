@@ -15,7 +15,7 @@ with DAG(
     'youtube_etl_pipeline',
     default_args=default_args,
     description='Complete YouTube ETL Pipeline with Extract, Transform, Load, and Process',
-    schedule_interval=None,
+    schedule_interval='*/2 * * * *',
     catchup=False,
     tags=['youtube', 'etl', 'pyspark']
 ) as dag:
