@@ -390,6 +390,9 @@ Jenkins automatically:
 
 ### Setting Up Jenkins
 
+> **Note:** In this project, Jenkins runs inside docker-compose alongside the ETL services for portability and ease of setup. In a production environment, Jenkins would run on a **dedicated server** separate from the application servers. This allows Jenkins to have full control over starting, stopping, and deploying containers on remote machines via SSH without the risk of shutting itself down.
+
+
 **Step 1: Start Jenkins**
 ```bash
 docker run -d \
