@@ -1,6 +1,6 @@
 # YouTube Data Engineering Pipeline
 
-An end-to-end data engineering project that automatically downloads YouTube trending video data from Kaggle, processes it through a multi-zone HDFS data lake, runs analytics with PySpark, stores results in PostgreSQL, and visualizes insights in Metabase — all orchestrated by Apache Airflow and automated with Jenkins CI/CD.
+An end-to-end data engineering project that automatically downloads YouTube trending video data from Kaggle, processes it through a multi-zone HDFS data lake, runs analytics with PySpark, stores results in PostgreSQL, and visualizes insights in Metabase all orchestrated by Apache Airflow and automated with Jenkins CI/CD.
 
 ## Architecture
 
