@@ -4,6 +4,8 @@ pipeline {
     environment {
         COMPOSE_FILE = 'docker-compose.yml'
         NOTIFICATION_EMAIL = credentials('notification-email')
+        KAGGLE_USERNAME = credentials('kaggle-username')
+        KAGGLE_KEY = credentials('kaggle-key')
     }
 
     options {
@@ -67,6 +69,11 @@ pipeline {
             steps {
                 echo '========== Start Services =========='
                 sh '''
+                    echo "Creating .env file..."
+                    echo "KAGGLE_USERNAME=${KAGGLE_USERNAME}" > .env
+                    echo "KAGGLE_KEY=${KAGGLE_KEY}" >> .env
+                    echo "ENVIRONMENT=dev" >> .env
+                    
                     echo "Starting all services..."
                     docker-compose -f ${COMPOSE_FILE} down -v 2>/dev/null || true
                     docker-compose -f ${COMPOSE_FILE} up -d
