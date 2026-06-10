@@ -5,18 +5,27 @@ An end-to-end data engineering project that automatically downloads YouTube tren
 ## Architecture
 
 ```
-Kaggle API
-    ↓
-[Extract] → HDFS Raw Zone        (/hdfs/{env}/youtube_data/raw_zone/)
-    ↓
-[Transform] → HDFS Staging Zone  (/hdfs/{env}/youtube_data/staging_zone/)
-    ↓
-[PySpark Analytics]
-    ↓                ↓
-HDFS Processed Zone  PostgreSQL (youtube_analytics database)
-(/hdfs/{env}/        ↓
-youtube_data/        Metabase Dashboard
-processed_zone/)
+┌─────────────────────────────────────────────────────────────────┐
+│                        Data Pipeline                            │
+│                                                                 │
+│  Kaggle API                                                     │
+│      ↓                                                          │
+│  [Extract] → HDFS Raw Zone (/hdfs/{env}/youtube_data/raw_zone/) │
+│      ↓                                                          │
+│  [Transform] → HDFS Staging Zone (staging_zone/)                │
+│      ↓                                                          │
+│  [PySpark Analytics]                                            │
+│      ↓              ↓                                           │
+│  HDFS Processed    PostgreSQL (youtube_analytics)                │
+│  Zone (parquet)        ↓                                        │
+│                    Metabase Dashboard                            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  Orchestration: Apache Airflow (scheduled every 2 minutes)     │
+│  CI/CD: Jenkins (validates code on every push)                  │
+│  Infrastructure: Docker Compose (all services containerized)    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Tech Stack
@@ -37,32 +46,38 @@ processed_zone/)
 ```
 youtube-etl-project/
 ├── dags/
-│   └── youtube_etl_dag.py          # Airflow DAG - orchestrates the pipeline
+│   └── youtube_etl_dag.py          # Airflow DAG - orchestrates the pipeline (daily schedule)
 ├── scripts/
-│   ├── config_loader.py            # Loads environment-specific config
+│   ├── config_loader.py            # Loads environment-specific config (dev/test/prod)
+│   ├── makedir.py                  # Creates HDFS zone directories
 │   ├── extract/
-│   │   └── youtube_extract.py      # Downloads from Kaggle, uploads to HDFS
+│   │   └── youtube_extract.py      # Downloads from Kaggle, uploads to HDFS raw zone
 │   ├── transform/
 │   │   └── clean_youtube_data.py   # Cleans data, moves to staging zone
 │   └── load/
+│       ├── load_to_hdfs.py         # Uploads files to HDFS
 │       ├── load_to_staging.py      # Creates staging zone directory
 │       └── load_to_processed.py    # Creates processed zone directory
 ├── spark_jobs/
-│   ├── process_data.py             # PySpark analytics, writes to PostgreSQL
+│   ├── __init__.py
+│   ├── process_data.py             # PySpark analytics, writes to HDFS and PostgreSQL
 │   └── utils/
+│       ├── __init__.py
 │       └── spark_helpers.py        # Spark session and HDFS utilities
 ├── envs/
 │   ├── dev/config.yaml             # Development environment config
 │   ├── test/config.yaml            # Testing environment config
 │   └── prod/config.yaml            # Production environment config
 ├── jenkins/
-│   └── Jenkinsfile                 # CI/CD pipeline definition
+│   ├── Jenkinsfile                 # CI/CD pipeline definition
+│   └── Dockerfile                  # Custom Jenkins image with Python and Docker
 ├── Dockerfile                      # PySpark container image
 ├── docker-compose.yml              # Full infrastructure stack
-├── entrypoint.sh                   # Container startup script
-├── init-db.sql                     # Creates PostgreSQL databases
+├── entrypoint.sh                   # Container startup (creates Kaggle credentials)
+├── init-db.sql                     # Creates metabase and youtube_analytics databases
 ├── requirements.txt                # Python dependencies
-└── .gitignore                      # Protects sensitive files
+├── LICENSE                         # MIT License
+└── .gitignore                      # Protects sensitive files (.env, credentials)
 ```
 
 ---
@@ -130,7 +145,7 @@ Your credentials are **never stored in the Docker image** or pushed to GitHub. T
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/youtube-etl-project.git
+git clone https://github.com/Manendar/youtube-etl-project.git
 cd youtube-etl-project
 ```
 
@@ -164,8 +179,11 @@ All containers should show as running:
 - `airflow_webserver`
 - `airflow_scheduler`
 - `metabase`
+- `jenkins_server`
 
 ### 5. Trigger the Pipeline
+
+The pipeline is scheduled to run **automatically every day at 2:00 AM**. You can also trigger it manually:
 
 Open Airflow at **http://localhost:8082** (admin / admin) and trigger the `youtube_etl_pipeline` DAG.
 
@@ -220,8 +238,9 @@ PySpark generates 5 analytics tables saved to both HDFS and PostgreSQL:
 |---------|-----|-------------|
 | Airflow | http://localhost:8082 | admin / admin |
 | HDFS NameNode | http://localhost:9870 | - |
-| PySpark UI | http://localhost:4040 | - (only during Spark job) |
 | Metabase | http://localhost:3000 | set on first login |
+| Jenkins | http://localhost:8080 | admin / admin |
+| PySpark UI | http://localhost:4040 | - (only during Spark job) |
 | PostgreSQL | terminal only | airflow / airflow |
 
 ---
@@ -362,30 +381,38 @@ Jenkins automates the entire deployment process so you never have to manually SS
 
 ### How Jenkins Works in This Project
 
+**Current implementation (local development):**
+```
+You push code to GitHub
+    ↓
+Jenkins (manually triggered or via webhook):
+  1. Pulls your code from GitHub
+  2. Validates project structure
+  3. Lints all Python files (syntax check)
+  4. Builds the Docker image
+  5. Runs integration tests
+  6. Sends email notification (success/failure)
+```
+
+**Production implementation (dedicated Jenkins server):**
 ```
 You push code to GitHub (feature branch)
     ↓
-GitHub sends webhook to Jenkins
+GitHub sends webhook to Jenkins server
     ↓
 Jenkins automatically:
   1. Pulls your code
-  2. Sets ENVIRONMENT=test
-  3. Runs: docker-compose build --no-cache
-  4. Runs: docker-compose up -d
-  5. Waits for services to start
-  6. Runs health checks
-  7. Validates Airflow DAGs
-  8. Notifies QA team
+  2. Validates and lints
+  3. Builds Docker images
+  4. Deploys to TEST server (docker-compose up -d)
+  5. Runs health checks and integration tests
+  6. Notifies QA team
     ↓
 QA team validates on TEST environment
     ↓
 QA approves → merge to main branch
     ↓
-Jenkins automatically:
-  1. Pulls main branch
-  2. Sets ENVIRONMENT=prod
-  3. Deploys to PROD server
-  4. Monitors deployment
+Jenkins deploys to PROD server
 ```
 
 ### Setting Up Jenkins
@@ -439,22 +466,23 @@ The `jenkins/Jenkinsfile` defines these stages:
 | Stage | What It Does |
 |-------|-------------|
 | Checkout | Pulls code from GitHub |
-| Validate | Checks project structure |
-| Lint | Validates Python syntax |
-| Build | Builds Docker images |
-| Start Services | Starts all containers |
-| Health Check | Verifies all services running |
-| Integration Tests | Tests HDFS, Airflow, dependencies |
-| DAG Validation | Validates Airflow DAGs |
-| Deploy | Confirms successful deployment |
+| Validate | Checks all required files and directories exist |
+| Lint | Validates Python syntax for all .py files |
+| Build Image | Builds the PySpark Docker image |
+| Integration Tests | Tests HDFS connectivity and Python dependencies |
+| Deploy | Reports success and service URLs |
+
+On success or failure, Jenkins sends an email notification to the configured recipient.
 
 ### Environment Variables in Jenkins
 
 Add these to Jenkins credentials (never hardcode them):
-- `KAGGLE_USERNAME` - your Kaggle username
-- `KAGGLE_KEY` - your Kaggle API key
+- `kaggle-username` - your Kaggle username (Secret text)
+- `kaggle-key` - your Kaggle API key (Secret text)
+- `notification-email` - email address for build notifications (Secret text)
+- `github-credentials` - GitHub username + Personal Access Token (Username with password)
 
-Jenkins passes them to Docker at build time, just like your local `.env` file.
+Jenkins passes them securely to the pipeline without exposing them in code or logs.
 
 ---
 
@@ -468,11 +496,13 @@ Source: [Kaggle - Trending YouTube Video Statistics](https://www.kaggle.com/data
 
 ## Security Notes
 
-- Never commit `.env` to GitHub
-- Never commit `kaggle.json` to GitHub
-- Change `airflow_secret_key` in production
-- Change database passwords in production
+- `.env` file is gitignored and never committed to GitHub
+- `kaggle.json` is gitignored and never committed
+- Kaggle credentials are created at container runtime via `entrypoint.sh` (not baked into Docker image)
+- Jenkins stores credentials encrypted in its own database
+- Default passwords (`admin/admin`, `airflow/airflow`) should be changed in production
 - Enable HDFS permissions in production (`HDFS_CONF_dfs_permissions_enabled=true`)
+- Generate a strong `AIRFLOW__WEBSERVER__SECRET_KEY` for production
 
 ---
 
